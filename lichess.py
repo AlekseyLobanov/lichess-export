@@ -5,7 +5,6 @@ import argparse
 import os
 import sys
 import shutil
-import json
 import time
 import tempfile
 import logging
@@ -25,6 +24,8 @@ REQUESTS_NEED_VERIFY = False
 
 
 def getTempfileName(ext=""):
+    """Returns full path to temp file with with `ext` extension"""
+
     return os.path.join(
         tempfile.gettempdir(),
         sys.argv[0] + next(tempfile._get_candidate_names()) + ext
@@ -32,11 +33,15 @@ def getTempfileName(ext=""):
 
 
 def getGamesListUrl(user_name, page, block_size=100):
+    """Returns lichess url for downloading list of games"""
+
     URL_TEMPLATE = "https://en.lichess.org/api/user/{}/games?page={}&nb={}"
     return URL_TEMPLATE.format(user_name, page, block_size)
 
 
 def getGamePgnUrl(game_id):
+    """Returns lichess url for game with `game_id` id"""
+
     URL_TEMPLATE = "https://en.lichess.org/game/export/{}.pgn"
     return URL_TEMPLATE.format(game_id)
 
@@ -72,8 +77,8 @@ def getGamesList(user_name):
             else:
                 cur_page_ind += 1
     logging.info("Downloaded {} game identifiers".format(
-        games_count)
-    )
+        games_count
+    ))
 
 
 def downloadGamesToFile(game_ids, file_name, thread_count):
@@ -93,11 +98,14 @@ def downloadGamesToFile(game_ids, file_name, thread_count):
                     logging.info("Downloaded {}".format(req.url))
                     file_pgn.write((req.text + "\n\n").encode("utf-8"))
                 finally:
-                    [i.raw.release_conn() for i in req.history]
+                    for req_prev in req.history:
+                        req_prev.release_conn()
                     req.raw.release_conn()
 
 
 def writePgn(user_name, file_name, thread_count):
+    """Write pgn for selected usern to file"""
+
     downloadGamesToFile(getGamesList(user_name), file_name, thread_count)
 
 
@@ -139,14 +147,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging_selector = {
+    LOGGING_SELECTOR = {
         "off": logging.ERROR,
         "info": logging.INFO,
         "debug": logging.DEBUG
     }
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
-        level=logging_selector[args.logging],
+        level=LOGGING_SELECTOR[args.logging],
         datefmt="%H:%M:%S"
     )
     args.name = args.name.lower()
