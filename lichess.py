@@ -10,8 +10,8 @@ import tempfile
 import logging
 
 
+import grequests
 import requests
-import grequests as async  # requires grequests
 
 
 __author__ = "Aleksey Lobanov"
@@ -92,8 +92,8 @@ def downloadGamesToFile(game_ids, file_name, thread_count):
     with open(file_name, "wb") as file_pgn:
         # imap returns generator
         for chunk in game_ids:
-            reqs = [async.get(getGamePgnUrl(game_id)) for game_id in chunk]
-            for req in async.imap(reqs, size=thread_count):
+            reqs = [grequests.get(getGamePgnUrl(game_id), verify=REQUESTS_NEED_VERIFY) for game_id in chunk]
+            for req in grequests.imap(reqs, size=thread_count):
                 try:
                     logging.info("Downloaded {}".format(req.url))
                     file_pgn.write((req.text + "\n\n").encode("utf-8"))
